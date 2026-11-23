@@ -7,6 +7,15 @@
 set -uo pipefail
 cd /app
 
+# Upstream's images hard-link llama_index's bundled nltk stopwords to the uv cache, and
+# nltk's path guard refuses hard-linked files ("refusing multiply-linked file"), so every
+# vector DB test and indexing run fails. Use a private copy (one link per file) instead.
+export NLTK_DATA="${NLTK_DATA:-/tmp/nltk_data}"
+if [ ! -d "$NLTK_DATA/corpora" ]; then
+  rm -r "$NLTK_DATA.tmp" 2>/dev/null || true
+  cp -r /app/.venv/lib/python3.12/site-packages/llama_index/core/_static/nltk_cache "$NLTK_DATA.tmp"
+  mv "$NLTK_DATA.tmp" "$NLTK_DATA"
+fi
 export DB_SCHEMA="${DB_SCHEMA:-unstract}" DB_PORT="${DB_PORT:-5432}"
 export REDIS_PORT="${REDIS_PORT:-6379}" REDIS_USER="${REDIS_USER:-default}" REDIS_DB=0
 export CACHE_REDIS_ENABLED=true CACHE_REDIS_HOST="$REDIS_HOST" CACHE_REDIS_PORT="$REDIS_PORT" \

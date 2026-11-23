@@ -3,6 +3,15 @@
 set -euo pipefail
 cd /app
 
+# Upstream's images hard-link llama_index's bundled nltk stopwords to the uv cache, and
+# nltk's path guard refuses hard-linked files ("refusing multiply-linked file"), so every
+# vector DB test and indexing run fails. Use a private copy (one link per file) instead.
+export NLTK_DATA="${NLTK_DATA:-/tmp/nltk_data}"
+if [ ! -d "$NLTK_DATA/corpora" ]; then
+  rm -r "$NLTK_DATA.tmp" 2>/dev/null || true
+  cp -r /app/.venv/lib/python3.12/site-packages/llama_index/core/_static/nltk_cache "$NLTK_DATA.tmp"
+  mv "$NLTK_DATA.tmp" "$NLTK_DATA"
+fi
 # Defaults that never need changing on Railway (kept out of the template variables).
 export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-backend.settings.dev}"
 export PATH_PREFIX="${PATH_PREFIX:-api/v1}"
