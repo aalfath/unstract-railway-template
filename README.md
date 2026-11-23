@@ -14,7 +14,7 @@ Every service builds from this repository, and each Dockerfile pins an official 
 | Backend | `backend/` | Django API. First boot creates the schema, the pgvector extension and the MinIO bucket, then runs migrations under a Postgres lock. Health check `/health`. |
 | Workers | `workers/` | Upstream's 9 Postgres-queue consumers, the queue reaper and the log consumers (`unstract/worker-unified`) in one service; exits non-zero if any of them dies, so Railway restarts it. Health check `/healthz`. |
 | Platform Service | `platform-service/` | Adapter and usage lookups for the workers. Health check `/health`. |
-| X2Text Service | `x2text-service/` | Bridge to an Unstructured.io server for the "Unstructured IO Community" text extractor. Health check `/api/v1/x2text/health`. |
+| X2Text Service | `x2text-service/` | Bridge to an Unstructured.io server for the "Unstructured IO Community" text extractor. Waits for Postgres and creates the schema before it starts. Health check `/api/v1/x2text/health`. |
 | Postgres | `postgres/` | PostgreSQL 17 + pgvector (`pgvector/pgvector:0.8.2-pg17`), with SSL on. It is Unstract's database **and** can be its vector DB. Volume at `/var/lib/postgresql/data`. |
 | MinIO | `minio/` | Object storage for uploaded and processed files (Unstract's own MinIO build). Volume at `/data`. |
 | Redis | Railway Redis | Cache, log stream and Celery transport stub. |
