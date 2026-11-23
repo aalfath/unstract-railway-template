@@ -1,0 +1,64 @@
+x-common: &common
+  DB_HOST: postgres
+  DB_USER: unstract
+  DB_PASSWORD: pgpass123
+  DB_NAME: unstract
+  REDIS_HOST: redis
+  REDIS_PASSWORD: redispass123
+  INTERNAL_SERVICE_API_KEY: internalkey123
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: unstract
+  MINIO_SECRET_KEY: miniosecret123
+  PLATFORM_HOST: platform
+  X2TEXT_HOSTNAME: x2text
+services:
+  postgres:
+    build: ./postgres
+    environment: {POSTGRES_USER: unstract, POSTGRES_PASSWORD: pgpass123, POSTGRES_DB: unstract}
+    volumes: [pg:/var/lib/postgresql/data]
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --requirepass redispass123
+  minio:
+    build: ./minio
+    environment: {MINIO_ROOT_USER: unstract, MINIO_ROOT_PASSWORD: miniosecret123}
+    volumes: [minio:/data]
+  backend:
+    build: ./backend
+    environment:
+      <<: *common
+      PORT: "8000"
+      DJANGO_SECRET_KEY: djsecretdjsecretdjsecret
+      ENCRYPTION_KEY: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ=
+      DEFAULT_AUTH_USERNAME: unstract
+      DEFAULT_AUTH_PASSWORD: loginpass123
+      SYSTEM_ADMIN_PASSWORD: adminpass123
+      WEB_APP_ORIGIN_URL: http://localhost:8080
+      SESSION_COOKIE_SECURE: "False"
+      CSRF_COOKIE_SECURE: "False"
+  platform:
+    build: ./platform-service
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_USERNAME: default
+      REDIS_PASSWORD: redispass123
+      PG_BE_HOST: postgres
+      PG_BE_USERNAME: unstract
+      PG_BE_PASSWORD: pgpass123
+      PG_BE_DATABASE: unstract
+      ENCRYPTION_KEY: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ=
+  x2text:
+    build: ./x2text-service
+    environment: {DB_HOST: postgres, DB_USERNAME: unstract, DB_PASSWORD: pgpass123, DB_NAME: unstract}
+  workers:
+    build: ./workers
+    environment:
+      <<: *common
+      PORT: "8080"
+      BACKEND_HOST: backend
+  web:
+    build: ./frontend
+    environment: {PORT: "8080", BACKEND_HOST: backend}
+    ports: ["8080:8080"]
+volumes: {pg: {}, minio: {}}
