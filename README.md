@@ -51,7 +51,15 @@ You get no prompts at deploy time: every password and key is generated. LLM keys
 
 ## Resources
 
-The idle stack uses about 2.3 GB of RAM in total. The Workers service alone needs about 1.4 GB (12 Python processes), and the Backend about 0.5 GB. It doesn't fit Railway's Free or Trial plan (0.5 GB per service, and too few services), so use the **Hobby** plan or higher. Every worker runs with concurrency 1; raise `PG_EXECUTOR_CONCURRENCY` and `PG_FILEPROC_CONCURRENCY` on Workers for more parallel documents (each extra slot costs RAM).
+Measured on Railway with a real Prompt Studio run (upload, indexing, prompt), as memory in use:
+
+| Service | RAM |
+|---|---|
+| Workers | about 1.6 GB (12 Python processes); give it **2 GB** |
+| Backend | about 0.6 GB under load, and it is OOM-killed at 0.5 GB; give it **1 GB** |
+| Platform, X2Text, Postgres, MinIO, Redis, Unstract | under 0.1 GB each |
+
+That is about 2.5 GB in total. It doesn't fit Railway's Free or Trial plan (0.5 GB per service, and too few services), so use the **Hobby** plan or higher. Every worker runs with concurrency 1; raise `PG_EXECUTOR_CONCURRENCY` and `PG_FILEPROC_CONCURRENCY` on Workers for more parallel documents (each extra slot costs RAM).
 
 ## Updating
 
