@@ -118,7 +118,16 @@ conn = psycopg2.connect(host=os.environ["DB_HOST"], port=os.environ["DB_PORT"],
     user=os.environ["DB_USER"], password=os.environ["DB_PASSWORD"], dbname=os.environ["DB_NAME"])
 conn.autocommit = True
 cur = conn.cursor()
-cur.execute("SELECT pg_advisory_lock(729891)")
+# Poll with pg_try_advisory_lock: a blocking pg_advisory_lock keeps a transaction open
+# while it waits, and the migrations' CREATE INDEX CONCURRENTLY then waits for that
+# transaction forever (deadlock between overlapping deploys).
+import time
+while True:
+    cur.execute("SELECT pg_try_advisory_lock(729891)")
+    if cur.fetchone()[0]:
+        break
+    print("another deploy is migrating; waiting", flush=True)
+    time.sleep(5)
 try:
     rc = subprocess.call([".venv/bin/python", "manage.py", "migrate", "--no-input", "-v", "0"])
     if rc != 0:
