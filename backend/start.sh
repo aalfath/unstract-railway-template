@@ -131,7 +131,7 @@ while True:
 try:
     # A migration cut short (e.g. Postgres restarted) leaves CREATE INDEX CONCURRENTLY
     # indexes INVALID, and the re-run then fails with "already exists": drop them.
-    cur.execute("""SELECT format('%I.%I', n.nspname, c.relname) FROM pg_index i
+    cur.execute("""SELECT format('%%I.%%I', n.nspname, c.relname) FROM pg_index i
                    JOIN pg_class c ON c.oid = i.indexrelid JOIN pg_namespace n ON n.oid = c.relnamespace
                    WHERE NOT i.indisvalid AND n.nspname = %s""", (os.environ["DB_SCHEMA"],))
     for (idx,) in cur.fetchall():
